@@ -1,6 +1,8 @@
-# Medical Claim Processing Pipeline
+# 🏥 Medical Claim Processing Pipeline
 
-A production-ready FastAPI service that intelligently processes medical claim PDFs using **LangGraph** multi-agent orchestration and local **Ollama** LLMs. The system automatically classifies document pages, routes them to specialized extraction agents, and returns structured JSON data.
+**Automated, privacy-first extraction of structured data from medical claim PDFs using multi-agent orchestration and local LLMs.**
+
+A production-ready FastAPI service that processes medical claim PDFs using **LangGraph** multi-agent orchestration and local **Ollama** LLMs. The system classifies document pages, routes them to specialized extraction agents, and returns structured JSON data.
 
 ---
 
@@ -49,104 +51,50 @@ This pipeline solves a common healthcare problem: extracting structured data fro
 
 ## Architecture
 
+```mermaid
+flowchart TD
+  A[Client (Browser/curl)] -->|POST /api/process| B(FastAPI\nmain.py)
+  B --> C[LangGraph State Machine\n(workflow.py)]
+  C --> D[Segregator Agent\n- PDF to images (PyMuPDF)\n- OCR (Tesseract)\n- Page classification (LLM)]
+  D --> E1[ID Agent]
+  D --> E2[Discharge Agent]
+  D --> E3[Bill Agent]
+  D --> E4[Bank Agent]
+  E1 --> F[Aggregator]
+  E2 --> F
+  E3 --> F
+  E4 --> F
+  F --> G[JSON Response\n{extracted_data...}]
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           CLAIM PROCESSING PIPELINE                         │
-└─────────────────────────────────────────────────────────────────────────────┘
 
-                              ┌──────────────┐
-                              │   Client     │
-                              │  (Browser/   │
-                              │    curl)     │
-                              └──────┬───────┘
-                                     │
-                                     ▼
-                         ┌───────────────────────┐
-                         │      FastAPI          │
-                         │   POST /api/process   │
-                         │   (main.py)           │
-                         └───────────┬───────────┘
-                                     │
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         LANGGRAPH STATE MACHINE                             │
-│                              (workflow.py)                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│    ┌─────────────────────────────────────────────────────────────────┐     │
-│    │                      SEGREGATOR AGENT                           │     │
-│    │  • Converts PDF pages to images (PyMuPDF)                       │     │
-│    │  • Extracts text via OCR (Tesseract)                            │     │
-│    │  • Classifies each page using LLM (phi3)                        │     │
-│    │  • Builds routing map: {doc_type → [page_numbers]}             │     │
-│    └─────────────────────────────────────────────────────────────────┘     │
-│                                     │                                       │
-│                    ┌────────────────┼────────────────┐                     │
-│                    │                │                │                      │
-│                    ▼                ▼                ▼                      │
-│    ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐         │
-│    │    ID AGENT      │ │ DISCHARGE AGENT  │ │   BILL AGENT     │  ...    │
-│    │                  │ │                  │ │                  │         │
-│    │ Pages: identity  │ │ Pages: discharge │ │ Pages: itemized  │         │
-│    │ document only    │ │ summary only     │ │ bill only        │         │
-│    └────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘         │
-│             │                    │                    │                    │
-│             └────────────────────┼────────────────────┘                    │
-│                                  ▼                                         │
-│                    ┌─────────────────────────┐                             │
-│                    │       AGGREGATOR        │                             │
-│                    │  Combines all results   │                             │
-│                    │  into final JSON        │                             │
-│                    └─────────────────────────┘                             │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                     │
-                                     ▼
-                         ┌───────────────────────┐
-                         │    JSON Response      │
-                         │  {extracted_data...}  │
-                         └───────────────────────┘
-```
+**Key Points:**
+
+- Pages are classified and routed to specialized agents in parallel.
+- All results are aggregated into a single structured JSON response.
 
 ---
 
 ## LangGraph Workflow
 
-LangGraph is a library for building stateful, multi-agent applications. Our workflow is defined as a **directed graph** where:
+LangGraph defines the workflow as a **directed graph**:
 
-- **Nodes** = Agent functions that process/transform state
-- **Edges** = Execution flow between agents
-- **State** = Shared data structure passed between nodes
-
-### Workflow Graph Structure
-
+```mermaid
+flowchart TD
+    Start([Start]) --> S[Segregator Agent]
+    S -->|ID pages| ID[ID Agent]
+    S -->|Discharge pages| DIS[Discharge Agent]
+    S -->|Bill pages| BILL[Bill Agent]
+    S -->|Bank pages| BANK[Bank Agent]
+    ID --> AGG[Aggregator]
+    DIS --> AGG
+    BILL --> AGG
+    BANK --> AGG
+    AGG --> End([End])
 ```
-                              START
-                                │
-                                ▼
-                        ┌───────────────┐
-                        │  Segregator   │
-                        │    Agent      │
-                        └───────┬───────┘
-                                │
-            ┌───────────┬───────┴───────┬───────────┐
-            │           │               │           │
-            ▼           ▼               ▼           ▼
-      ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
-      │ ID Agent │ │Discharge │ │  Bill    │ │  Bank    │
-      │          │ │  Agent   │ │  Agent   │ │  Agent   │
-      └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘
-           │            │            │            │
-           └────────────┴─────┬──────┴────────────┘
-                              │
-                              ▼
-                       ┌─────────────┐
-                       │ Aggregator  │
-                       └──────┬──────┘
-                              │
-                              ▼
-                             END
-```
+
+**Nodes:** Agent functions that process/transform state.  
+**Edges:** Execution flow between agents.  
+**State:** Shared data structure passed between nodes.
 
 ### State Schema (ClaimState)
 
@@ -166,18 +114,8 @@ class ClaimState(TypedDict):
     final_result:         dict    # Combined output from aggregator
 ```
 
-### Parallel Execution
-
-After the Segregator classifies all pages, LangGraph executes the four extraction agents **in parallel**:
-
-```
-Segregator ──┬──► ID Agent ──────────┐
-             ├──► Discharge Agent ───┤
-             ├──► Bill Agent ────────┼──► Aggregator ──► END
-             └──► Bank Agent ────────┘
-```
-
-This parallel fan-out significantly reduces total processing time compared to sequential execution.
+**Parallel Execution:**
+After classification, all extraction agents run **in parallel** for maximum speed.
 
 ---
 
@@ -185,53 +123,18 @@ This parallel fan-out significantly reduces total processing time compared to se
 
 ### 1. Segregator Agent
 
-**Location:** `agents/segregator.py`
-
-**Purpose:** The gatekeeper that classifies every page and routes them to the right specialist.
+**Location:** `agents/segregator.py`  
+**Purpose:** Classifies every page and routes them to the right specialist.
 
 **How it works:**
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     SEGREGATOR AGENT FLOW                           │
-└─────────────────────────────────────────────────────────────────────┘
-
-     PDF Bytes
-         │
-         ▼
-┌─────────────────┐
-│  PyMuPDF        │    Convert each page to PNG image
-│  pdf_to_images  │    Resolution: 150 DPI
-└────────┬────────┘
-         │
-         ▼
-    For each page:
-         │
-         ▼
-┌─────────────────┐
-│  Tesseract OCR  │    Extract raw text from image
-│  pytesseract    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Ollama LLM     │    Classify text into 1 of 9 categories
-│  (phi3 model)   │    Returns: {"document_type": "...", "confidence": "..."}
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Build Routing  │    Group pages by document type
-│  Map            │    Apply single-page rules
-└────────┬────────┘
-         │
-         ▼
-    Routing Map: {
-      "identity_document": [3],
-      "discharge_summary": [4],
-      "itemized_bill": [9, 10, 11],
-      "cheque_or_bank_details": [2]
-    }
+```mermaid
+flowchart TD
+    A[PDF Bytes] --> B[PyMuPDF\npdf_to_images]
+    B --> C[Tesseract OCR\npytesseract]
+    C --> D[Ollama LLM\n(phi3 model)]
+    D --> E[Build Routing Map]
+    E --> F[Routing Map\n{doc_type: [pages]}]
 ```
 
 **Supported Document Types (9 categories):**
@@ -248,11 +151,11 @@ This parallel fan-out significantly reduces total processing time compared to se
 | `cash_receipt`           | Payment receipts                     |
 | `other`                  | Unclassified documents               |
 
-**Special Rules Applied:**
+**Special Routing Rules:**
 
-1. **Single-page enforcement:** `identity_document` and `cheque_or_bank_details` keep only the first detected page; extras go to `other`
-2. **Discharge overflow:** If multiple discharge pages detected, extras go to `investigation_report`
-3. **Cash receipt merging:** `cash_receipt` pages are routed to the Bill Agent for processing
+1. Only the first `identity_document` and `cheque_or_bank_details` page is kept; extras go to `other`.
+2. Extra discharge pages are routed to `investigation_report`.
+3. `cash_receipt` pages are merged with the Bill Agent.
 
 ---
 
@@ -281,10 +184,7 @@ This parallel fan-out significantly reduces total processing time compared to se
 ```
 
 **Processing Flow:**
-
-```
-Pages [3] ──► Fetch images ──► OCR text ──► LLM extraction ──► id_data
-```
+Pages [3] → Fetch images → OCR text → LLM extraction → id_data
 
 ---
 
@@ -324,44 +224,19 @@ Pages [3] ──► Fetch images ──► OCR text ──► LLM extraction ─
 
 **Input:** Pages classified as `itemized_bill` (includes merged `cash_receipt` pages)
 
-**Key Difference:** Unlike other agents that combine all pages before LLM processing, the Bill Agent processes **each page individually** then merges results. This handles multi-page bills with continuation items.
+**Key Difference:** Unlike other agents, the Bill Agent processes **each page individually** then merges results. This handles multi-page bills with continuation items.
 
 **Extraction Flow:**
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      BILL AGENT FLOW                                │
-└─────────────────────────────────────────────────────────────────────┘
-
-     Pages [9, 10, 11]
-            │
-            ▼
-    ┌───────┴───────┐
-    │               │
-    ▼               ▼
- Page 9          Page 10         Page 11
-    │               │               │
-    ▼               ▼               ▼
-┌─────────┐   ┌─────────┐    ┌─────────┐
-│   OCR   │   │   OCR   │    │   OCR   │
-└────┬────┘   └────┬────┘    └────┬────┘
-     │             │              │
-     ▼             ▼              ▼
-┌─────────┐   ┌─────────┐    ┌─────────┐
-│   LLM   │   │   LLM   │    │   LLM   │
-│ Extract │   │ Extract │    │ Extract │
-└────┬────┘   └────┬────┘    └────┬────┘
-     │             │              │
-     └─────────────┴──────────────┘
-                   │
-                   ▼
-          ┌───────────────┐
-          │    MERGE      │
-          │   Results     │
-          └───────┬───────┘
-                  │
-                  ▼
-            bill_data
+```mermaid
+flowchart TD
+    A[Pages 9, 10, 11] --> B1[OCR] --> C1[LLM Extract]
+    A --> B2[OCR] --> C2[LLM Extract]
+    A --> B3[OCR] --> C3[LLM Extract]
+    C1 --> D[MERGE Results]
+    C2 --> D
+    C3 --> D
+    D --> E[bill_data]
 ```
 
 **Output Structure:**
@@ -452,20 +327,7 @@ Pages [3] ──► Fetch images ──► OCR text ──► LLM extraction ─
 **Purpose:** Combines outputs from all extraction agents into the final response.
 
 **Process:**
-
-```python
-final_result = {
-    "claim_id": state["claim_id"],
-    "total_pages_processed": len(state["page_classifications"]),
-    "page_classifications": state["page_classifications"],
-    "extracted_data": {
-        "identity": state["id_data"],
-        "discharge_summary": state["discharge_data"],
-        "itemized_bill": state["bill_data"],
-        "cheque_or_bank_details": state["bank_data"]
-    }
-}
-```
+All agent outputs are combined into a single final_result dictionary for the API response.
 
 ---
 
@@ -473,106 +335,32 @@ final_result = {
 
 Here's the end-to-end journey of a claim PDF through the system:
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        END-TO-END PROCESS FLOW                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-
- STEP 1: API Request
- ───────────────────
- Client sends POST /api/process with:
-   • claim_id: "CLM-2025-001"
-   • file: medical_claim.pdf (18 pages)
-
-                              │
-                              ▼
-
- STEP 2: Validation (main.py)
- ────────────────────────────
-   • Check file is PDF
-   • Check file is not empty
-   • Log page count
-
-                              │
-                              ▼
-
- STEP 3: Initialize State
- ────────────────────────
-   initial_state = {
-     claim_id: "CLM-2025-001",
-     pdf_bytes: <raw bytes>,
-     page_images: {},
-     page_classifications: {},
-     routing: {},
-     id_data: {},
-     discharge_data: {},
-     bill_data: {},
-     bank_data: {},
-     final_result: {}
-   }
-
-                              │
-                              ▼
-
- STEP 4: Segregator (page classification)
- ────────────────────────────────────────
-   For each of 18 pages:
-     ├─► Convert to PNG (PyMuPDF)
-     ├─► Extract text (Tesseract OCR)
-     └─► Classify with LLM (phi3)
-
-   Results:
-     page_1  → claim_forms
-     page_2  → cheque_or_bank_details
-     page_3  → identity_document
-     page_4  → discharge_summary
-     page_5  → investigation_report
-     ...
-     page_9  → itemized_bill
-     page_10 → itemized_bill
-     page_11 → itemized_bill
-
-   Routing map:
-     {
-       "claim_forms": [1],
-       "cheque_or_bank_details": [2],
-       "identity_document": [3],
-       "discharge_summary": [4],
-       "investigation_report": [5, 6, 7, 8],
-       "itemized_bill": [9, 10, 11],
-       ...
-     }
-
-                              │
-                              ▼
-
- STEP 5: Parallel Extraction
- ───────────────────────────
-   ┌─────────────────────┬─────────────────────┬─────────────────────┐
-   │                     │                     │                     │
-   ▼                     ▼                     ▼                     ▼
- ID Agent           Discharge Agent       Bill Agent           Bank Agent
- (page 3)           (page 4)              (pages 9,10,11)      (page 2)
-   │                     │                     │                     │
-   ▼                     ▼                     ▼                     ▼
- OCR + LLM          OCR + LLM             OCR + LLM × 3        OCR + LLM
-   │                     │                     │                     │
-   ▼                     ▼                     ▼                     ▼
- id_data            discharge_data         bill_data            bank_data
-
-                              │
-                              ▼
-
- STEP 6: Aggregation
- ───────────────────
-   Combine all extracted data into final_result
-
-                              │
-                              ▼
-
- STEP 7: API Response
- ────────────────────
-   Return JSON with all extracted data
+```mermaid
+sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant LangGraph
+    participant Segregator
+    participant IDAgent
+    participant DischargeAgent
+    participant BillAgent
+    participant BankAgent
+    participant Aggregator
+    Client->>FastAPI: POST /api/process (PDF, claim_id)
+    FastAPI->>LangGraph: Initialize state
+    LangGraph->>Segregator: Classify & route pages
+    Segregator->>IDAgent: ID pages
+    Segregator->>DischargeAgent: Discharge pages
+    Segregator->>BillAgent: Bill pages
+    Segregator->>BankAgent: Bank pages
+    par Parallel Extraction
+        IDAgent-->>Aggregator: id_data
+        DischargeAgent-->>Aggregator: discharge_data
+        BillAgent-->>Aggregator: bill_data
+        BankAgent-->>Aggregator: bank_data
+    end
+    Aggregator->>FastAPI: final_result
+    FastAPI->>Client: JSON response
 ```
 
 ---
@@ -829,25 +617,31 @@ ollama serve &
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/claim-pipeline.git
-cd claim-pipeline
+git clone https://github.com/karthikpagnis/PolicyPilot.git
 
-# Create virtual environment
+cd PolicyPilot
+
+# Create a Python virtual environment (recommended)
 python3 -m venv venv
 
-# Activate
+# Activate the virtual environment
+# On macOS/Linux:
 source venv/bin/activate
+# On Windows:
+venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment
-cat > .env << EOF
+# Configure environment variables
+# Create a .env file in the project root with the following content:
+```
+
 OLLAMA_HOST=http://127.0.0.1:11434
 OLLAMA_MODEL=phi3:latest
 OLLAMA_REQUEST_TIMEOUT_SECONDS=180
-EOF
-```
+
+````
 
 ---
 
@@ -864,9 +658,10 @@ source venv/bin/activate
 # Windows:
 venv\Scripts\activate
 
+
 # Start FastAPI server
 uvicorn main:app --reload
-```
+````
 
 You should see:
 
