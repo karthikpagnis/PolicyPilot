@@ -53,18 +53,18 @@ This pipeline solves a common healthcare problem: extracting structured data fro
 
 ```mermaid
 flowchart TD
-  A[Client (Browser/curl)] -->|POST /api/process| B(FastAPI\nmain.py)
-  B --> C[LangGraph State Machine\n(workflow.py)]
-  C --> D[Segregator Agent\n- PDF to images (PyMuPDF)\n- OCR (Tesseract)\n- Page classification (LLM)]
-  D --> E1[ID Agent]
-  D --> E2[Discharge Agent]
-  D --> E3[Bill Agent]
-  D --> E4[Bank Agent]
-  E1 --> F[Aggregator]
-  E2 --> F
-  E3 --> F
-  E4 --> F
-  F --> G[JSON Response\n{extracted_data...}]
+	A[Client (Browser/curl)] -->|POST /api/process| B(FastAPI<br>main.py)
+	B --> C[LangGraph State Machine<br>(workflow.py)]
+	C --> D[Segregator Agent<br>- PDF to images (PyMuPDF)<br>- OCR (Tesseract)<br>- Page classification (LLM)]
+	D --> E1[ID Agent]
+	D --> E2[Discharge Agent]
+	D --> E3[Bill Agent]
+	D --> E4[Bank Agent]
+	E1 --> F[Aggregator]
+	E2 --> F
+	E3 --> F
+	E4 --> F
+	F --> G[JSON Response<br>{extracted_data...}]
 ```
 
 **Key Points:**
@@ -130,11 +130,11 @@ After classification, all extraction agents run **in parallel** for maximum spee
 
 ```mermaid
 flowchart TD
-    A[PDF Bytes] --> B[PyMuPDF\npdf_to_images]
-    B --> C[Tesseract OCR\npytesseract]
-    C --> D[Ollama LLM\n(phi3 model)]
-    D --> E[Build Routing Map]
-    E --> F[Routing Map\n{doc_type: [pages]}]
+	A[PDF Bytes] --> B[PyMuPDF<br>pdf_to_images]
+	B --> C[Tesseract OCR<br>pytesseract]
+	C --> D[Ollama LLM<br>(phi3 model)]
+	D --> E[Build Routing Map]
+	E --> F[Routing Map<br>{doc_type: [pages]}]
 ```
 
 **Supported Document Types (9 categories):**
