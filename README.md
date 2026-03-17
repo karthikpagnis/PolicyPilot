@@ -1,4 +1,4 @@
-# 🏥 Medical Claim Processing Pipeline
+# Medical Claim Processing Pipeline
 
 **Automated, privacy-first extraction of structured data from medical claim PDFs using multi-agent orchestration and local LLMs.**
 
@@ -615,7 +615,7 @@ ollama serve &
 
 #### Clone and Setup
 
-```bash
+````bash
 # Clone the repository
 git clone https://github.com/karthikpagnis/PolicyPilot.git
 
@@ -636,15 +636,27 @@ pip install -r requirements.txt
 
 # Configure environment variables
 # Create a .env file in the project root with the following content:
-```
 
+## On macOS/Linux:
+```bash
+cat > .env << EOF
 OLLAMA_HOST=http://127.0.0.1:11434
 OLLAMA_MODEL=phi3:latest
 OLLAMA_REQUEST_TIMEOUT_SECONDS=180
+EOF
+````
+
+## On Windows:
+
+Open Notepad or any text editor, paste the following lines, and save as `.env` in your project folder:
 
 ```
-
+OLLAMA_HOST=http://127.0.0.1:11434
+OLLAMA_MODEL=phi3:latest
+OLLAMA_REQUEST_TIMEOUT_SECONDS=180
 ```
+
+````
 
 ---
 
@@ -664,7 +676,7 @@ venv\Scripts\activate
 
 # Start FastAPI server
 uvicorn main:app --reload
-```
+````
 
 You should see:
 
@@ -706,13 +718,18 @@ print(response.json())
 
 ### Interactive Documentation (Swagger UI)
 
-Open your browser and navigate to:
+After starting the FastAPI server, open your browser and navigate to:
 
 ```
 http://localhost:8000/docs
 ```
 
 This provides a visual interface to test the API.
+
+**Note:**
+
+- The default port is `8000` (as shown in the server startup message).
+- If you run FastAPI with a different port (e.g., `uvicorn main:app --port 9000`), use `http://localhost:9000/docs` instead.
 
 ### Using curl
 
