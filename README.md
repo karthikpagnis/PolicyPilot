@@ -613,12 +613,13 @@ ollama pull phi3:latest
 ollama serve &
 ```
 
-#### Clone and setup
+#### Clone and Setup
 
 ```bash
 # Clone the repository
 git clone https://github.com/karthikpagnis/PolicyPilot.git
 
+# Move into the project directory
 cd PolicyPilot
 
 # Create a Python virtual environment (recommended)
@@ -641,7 +642,9 @@ OLLAMA_HOST=http://127.0.0.1:11434
 OLLAMA_MODEL=phi3:latest
 OLLAMA_REQUEST_TIMEOUT_SECONDS=180
 
-````
+```
+
+```
 
 ---
 
@@ -661,7 +664,7 @@ venv\Scripts\activate
 
 # Start FastAPI server
 uvicorn main:app --reload
-````
+```
 
 You should see:
 
