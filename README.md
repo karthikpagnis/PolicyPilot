@@ -54,7 +54,7 @@ This pipeline solves a common healthcare problem: extracting structured data fro
 ```mermaid
 flowchart TD
 	A[Client -- Browser/curl] -->|POST /api/process| B[FastAPI main.py]
-	B --> C[LangGraph State Machine (workflow.py)]
+	B --> C[LangGraph State Machine -- workflow.py]
 	C --> D[Segregator Agent: PDF, OCR, LLM]
 	D --> E1[ID Agent]
 	D --> E2[Discharge Agent]
