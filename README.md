@@ -368,7 +368,7 @@ sequenceDiagram
 ## Project Structure
 
 ```
-claim-pipeline/
+PolicyPilot/
 │
 ├── main.py                    # FastAPI application entry point
 │                              # - Defines /api/process endpoint
@@ -466,8 +466,8 @@ Keep this terminal open, or run in background.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/claim-pipeline.git
-cd claim-pipeline
+git clone https://github.com/karthikpagnis/PolicyPilot.git
+cd PolicyPilot
 
 # Create virtual environment
 python3 -m venv venv
@@ -542,8 +542,8 @@ Open a new Command Prompt:
 
 ```cmd
 # Clone the repository
-git clone https://github.com/yourusername/claim-pipeline.git
-cd claim-pipeline
+git clone https://github.com/karthikpagnis/PolicyPilot.git
+cd PolicyPilot
 
 # Create virtual environment
 python -m venv venv
@@ -559,7 +559,7 @@ pip install -r requirements.txt
 
 Create a `.env` file in the project root with:
 
-```
+```env
 OLLAMA_HOST=http://127.0.0.1:11434
 OLLAMA_MODEL=phi3:latest
 OLLAMA_REQUEST_TIMEOUT_SECONDS=180
@@ -615,11 +615,8 @@ ollama serve &
 
 #### Clone and Setup
 
-````bash
-# Clone the repository
+```bash
 git clone https://github.com/karthikpagnis/PolicyPilot.git
-
-# Move into the project directory
 cd PolicyPilot
 
 # Create a Python virtual environment (recommended)
@@ -633,20 +630,23 @@ venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+```
 
 # Configure environment variables
+
 # Create a .env file in the project root with the following content:
 
-## On macOS/Linux:
+### On macOS/Linux:
+
 ```bash
 cat > .env << EOF
 OLLAMA_HOST=http://127.0.0.1:11434
 OLLAMA_MODEL=phi3:latest
 OLLAMA_REQUEST_TIMEOUT_SECONDS=180
 EOF
-````
+```
 
-## On Windows:
+### On Windows:
 
 Open Notepad or any text editor, paste the following lines, and save as `.env` in your project folder:
 
@@ -655,8 +655,6 @@ OLLAMA_HOST=http://127.0.0.1:11434
 OLLAMA_MODEL=phi3:latest
 OLLAMA_REQUEST_TIMEOUT_SECONDS=180
 ```
-
-````
 
 ---
 
@@ -673,10 +671,9 @@ source venv/bin/activate
 # Windows:
 venv\Scripts\activate
 
-
 # Start FastAPI server
 uvicorn main:app --reload
-````
+```
 
 You should see:
 
@@ -695,8 +692,8 @@ A sample medical claim PDF (`final.pdf`) is included in the repository for testi
 
 ```bash
 curl -X POST http://localhost:8000/api/process \
-  -F "claim_id=TEST-001" \
-  -F "file=@final.pdf"
+	-F "claim_id=TEST-001" \
+	-F "file=@final.pdf"
 ```
 
 ### Using Python
@@ -705,9 +702,9 @@ curl -X POST http://localhost:8000/api/process \
 import requests
 
 response = requests.post(
-    "http://localhost:8000/api/process",
-    files={"file": open("final.pdf", "rb")},
-    data={"claim_id": "TEST-001"}
+		"http://localhost:8000/api/process",
+		files={"file": open("final.pdf", "rb")},
+		data={"claim_id": "TEST-001"}
 )
 print(response.json())
 ```
@@ -735,8 +732,8 @@ This provides a visual interface to test the API.
 
 ```bash
 curl -X POST http://localhost:8000/api/process \
-  -F "claim_id=CLM-2025-001" \
-  -F "file=@/path/to/medical_claim.pdf"
+	-F "claim_id=CLM-2025-001" \
+	-F "file=@/path/to/medical_claim.pdf"
 ```
 
 ### Using Python requests
