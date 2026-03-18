@@ -6,19 +6,18 @@ FROM python:3.10-slim
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        tesseract-ocr \
-        curl \
-        git \
-        build-essential \
-        libglib2.0-0 \
-        libsm6 \
-        libxext6 \
-        libxrender-dev \
-        && rm -rf /var/lib/apt/lists/*
+    tesseract-ocr \
+    curl \
+    git \
+    build-essential \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Ollama (Linux x86_64)
-RUN curl -fsSL https://ollama.com/download/ollama-linux-amd64 -o /usr/local/bin/ollama \
-    && chmod +x /usr/local/bin/ollama
+# Install Ollama using official install script
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Create app directory
 WORKDIR /app
