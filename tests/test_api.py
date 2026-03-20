@@ -1,11 +1,14 @@
 """API tests for claim-pipeline."""
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
+import main
+
 from types import SimpleNamespace
 
 import fitz
 from fastapi.testclient import TestClient
-
-import main
 
 client = TestClient(main.app)
 
